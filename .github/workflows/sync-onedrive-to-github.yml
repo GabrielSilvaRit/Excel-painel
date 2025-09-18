@@ -1,0 +1,32 @@
+name: Sync OneDrive to GitHub
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Executa a cada hora
+  workflow_dispatch:  # Permite execução manual
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download Excel from OneDrive
+        run: |
+          mkdir -p public/data
+          curl -L "${{ secrets.ONEDRIVE_URL }}" -o public/data/dados-atendimentos.xlsx
+
+      - name: Commit changes
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          git add public/data/dados-atendimentos.xlsx
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update Excel from OneDrive"
+            git push
+          fi
